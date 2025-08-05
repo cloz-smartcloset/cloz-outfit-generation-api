@@ -1,0 +1,8 @@
+{
+  "httpMethod": "POST",
+  "path": "/outfit_generator/generate",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{\"products\": [\"test_product_1\", \"test_product_2\"], \"userId\": \"test_user_123\", \"options\": {\"model\": \"random\", \"maxPieces\": 8}}"
+}

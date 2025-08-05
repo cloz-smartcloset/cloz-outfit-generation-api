@@ -1,0 +1,53 @@
+{
+  "name": "cloz-outfit-generation-api",
+  "version": "1.0.0",
+  "description": "Advanced outfit generation service with multiple AI models and realistic clothing constraints",
+  "main": "src/handlers/outfit-generator.js",
+  "scripts": {
+    "test": "jest",
+    "test:integration": "jest --config jest.integration.config.js",
+    "lint": "eslint src/ --ext .js",
+    "lint:fix": "eslint src/ --ext .js --fix",
+    "package": "zip -r outfit-generator.zip src/ node_modules/ package.json",
+    "deploy": "npm run package && aws lambda update-function-code --function-name ClozRandomLookGenerator --zip-file fileb://outfit-generator.zip --region eu-west-3",
+    "deploy:new": "npm run package && aws lambda create-function --function-name ClozOutfitGenerator --runtime nodejs18.x --role arn:aws:iam::195275649388:role/ClozLambdaExecutionRole --handler src/handlers/outfit-generator.handler --zip-file fileb://outfit-generator.zip --region eu-west-3",
+    "logs": "aws logs tail /aws/lambda/ClozRandomLookGenerator --follow --region eu-west-3",
+    "invoke:test": "aws lambda invoke --function-name ClozRandomLookGenerator --payload file://tests/sample-request.json response.json --region eu-west-3"
+  },
+  "keywords": [
+    "fashion",
+    "outfit",
+    "generation",
+    "ai",
+    "aws",
+    "lambda",
+    "api-gateway",
+    "serverless"
+  ],
+  "author": "Cloz Smart Closet",
+  "license": "PROPRIETARY",
+  "dependencies": {
+    "aws-sdk": "^2.1691.0",
+    "pg": "^8.12.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.143",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.14.15",
+    "@types/pg": "^8.11.6",
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cloz-smartcloset/cloz-outfit-generation-api.git"
+  },
+  "bugs": {
+    "url": "https://github.com/cloz-smartcloset/cloz-outfit-generation-api/issues"
+  },
+  "homepage": "https://github.com/cloz-smartcloset/cloz-outfit-generation-api#readme"
+}
