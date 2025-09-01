@@ -1,0 +1,44 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 18
+    commands:
+      - echo "Installing dependencies..."
+      - npm ci --only=production
+      - echo "Dependencies installed successfully"
+
+  pre_build:
+    commands:
+      - echo "Starting pre-build phase..."
+      - echo "Current directory: $CODEBUILD_SRC_DIR"
+      - echo "Node version: $(node --version)"
+      - echo "NPM version: $(npm --version)"
+      - echo "Pre-build phase completed"
+
+  build:
+    commands:
+      - echo "Starting build phase..."
+      - echo "Creating deployment package..."
+      - zip -r outfit-generator.zip src/ node_modules/ package.json -x "*.git*" "*test*" "*.md" "deploy/*" "build/*"
+      - echo "Deployment package created successfully"
+      - ls -la outfit-generator.zip
+      - echo "Build phase completed"
+
+  post_build:
+    commands:
+      - echo "Starting post-build phase..."
+      - echo "Build completed successfully on `date`"
+      - echo "Deployment package size: $(du -h outfit-generator.zip | cut -f1)"
+
+artifacts:
+  files:
+    - outfit-generator.zip
+    - buildspec.yml
+  discard-paths: no
+  name: outfit-generator-build-$(date +%Y%m%d-%H%M%S)
+
+cache:
+  paths:
+    - 'node_modules/**/*'

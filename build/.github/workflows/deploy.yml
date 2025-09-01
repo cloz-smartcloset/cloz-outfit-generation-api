@@ -1,0 +1,123 @@
+name: 🚀 Deploy to AWS Lambda
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+        - production
+        - staging
+
+env:
+  AWS_REGION: eu-west-3
+  NODE_VERSION: '18'
+
+jobs:
+  test:
+    name: 🧪 Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🧪 Run tests
+        run: npm test
+
+      - name: 🔍 Lint code
+        run: npm run lint
+
+  build:
+    name: 🏗️ Build
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci --only=production
+
+      - name: 📦 Create deployment package
+        run: |
+          zip -r outfit-generator.zip src/ node_modules/ package.json \
+            -x "*.git*" "*test*" "*.md" "deploy/*" "build/*" ".github/*"
+
+      - name: 📊 Package size
+        run: |
+          echo "Deployment package size:"
+          du -h outfit-generator.zip
+
+      - name: 📤 Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lambda-package
+          path: outfit-generator.zip
+
+  deploy:
+    name: 🚀 Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    environment: production
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📥 Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lambda-package
+          path: .
+
+      - name: 🔐 Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: 🚀 Deploy to Lambda
+        run: |
+          aws lambda update-function-code \
+            --function-name ClozRandomLookGenerator \
+            --zip-file fileb://outfit-generator.zip \
+            --region ${{ env.AWS_REGION }}
+
+      - name: ✅ Verify deployment
+        run: |
+          aws lambda get-function \
+            --function-name ClozRandomLookGenerator \
+            --region ${{ env.AWS_REGION }} \
+            --query 'Configuration.{FunctionName:FunctionName,State:State,LastUpdateStatus:LastUpdateStatus}' \
+            --output table
+
+      - name: 🎉 Deployment complete
+        run: |
+          echo "✅ Lambda function deployed successfully!"
+          echo "🌐 Function: ClozRandomLookGenerator"
+          echo "📍 Region: ${{ env.AWS_REGION }}"
+          echo "🕐 Time: $(date)"
