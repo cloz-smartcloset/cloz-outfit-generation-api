@@ -167,11 +167,9 @@ async function generateOutfit(inputProducts, userId = null, options = {}) {
 
     // Get products from databases
     const baseProducts = await getProductDetails(inputProducts, userId);
-    console.log(`Found ${baseProducts.length} base products`);
 
     // Generate random outfit
     const outfitProducts = await generateRandomOutfit(baseProducts, options);
-    console.log(`Generated outfit with ${outfitProducts.length} products`);
 
     return {
       success: true,
@@ -210,11 +208,12 @@ async function generateOutfit(inputProducts, userId = null, options = {}) {
  */
 async function getProductDetails(productIds, userId) {
   const products = [];
+  
   const pgClient = new Client({
     host: process.env.DB_HOST,
     port: process.env.DB_PORT || 5432,
     database: process.env.DB_NAME,
-    user: 'postgres',
+    user: process.env.USER,
     password: process.env.DB_PASSWORD,
     ssl: {rejectUnauthorized: false},
   });
@@ -248,6 +247,9 @@ async function getProductDetails(productIds, userId) {
         });
       }
     }
+  } catch (error) {
+    console.error('PostgreSQL connection error:', error.message);
+    throw error;
   } finally {
     await pgClient.end();
   }
@@ -331,17 +333,19 @@ async function generateRandomOutfit(baseProducts, options) {
  */
 async function getComplementaryProducts(count) {
   const products = [];
-  const pgClient = new Client({
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT || 5432,
-    database: process.env.DB_NAME,
-    user: 'postgres',
-    password: process.env.DB_PASSWORD,
-    ssl: {rejectUnauthorized: false},
-  });
+  
+      const pgClient = new Client({
+      host: process.env.DB_HOST,
+      port: process.env.DB_PORT || 5432,
+      database: process.env.DB_NAME,
+      user: process.env.USER,
+      password: process.env.DB_PASSWORD,
+      ssl: {rejectUnauthorized: false},
+    });
 
   try {
     await pgClient.connect();
+    
     const result = await pgClient.query(
         'SELECT * FROM product_look_dim WHERE title IS NOT NULL ORDER BY RANDOM() LIMIT $1',
         [count]
@@ -356,7 +360,7 @@ async function getComplementaryProducts(count) {
       });
     });
   } catch (error) {
-    console.error('Error getting complementary products:', error);
+    console.error('Complementary Products - PostgreSQL connection error:', error.message);
   } finally {
     await pgClient.end();
   }
