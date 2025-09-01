@@ -116,7 +116,7 @@ Resources:
       Source:
         Type: S3
         Location: !Sub '${SourceCodeBucket}/source.zip'
-        BuildSpec: build/buildspec.yml
+        BuildSpec: buildspec.yml
       Cache:
         Type: S3
         Location: !Sub '${SourceCodeBucket}/cache'
