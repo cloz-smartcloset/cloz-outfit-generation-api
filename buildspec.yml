@@ -29,7 +29,7 @@ phases:
   post_build:
     commands:
       - echo "Starting post-build phase..."
-      - echo "Build completed successfully on `date`"
+      - echo "Build completed successfully on $(date)"
       - echo "Deployment package size: $(du -h outfit-generator.zip | cut -f1)"
 
 artifacts:
