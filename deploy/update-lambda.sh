@@ -7,6 +7,14 @@ set -e
 
 echo "🚀 Deploying Cloz Outfit Generation API..."
 
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Go to the project root directory (parent of deploy folder)
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+echo "📁 Project root: $PROJECT_ROOT"
+cd "$PROJECT_ROOT"
+
 # Set AWS credentials if not already set
 export AWS_REGION=${AWS_REGION:-"eu-west-3"}
 
@@ -17,10 +25,30 @@ RUNTIME="nodejs18.x"
 ROLE="arn:aws:iam::195275649388:role/ClozLambdaExecutionRole"
 
 echo "📦 Installing dependencies..."
-npm install --production
+npm install --omit=dev
 
 echo "📦 Creating deployment package..."
-zip -r outfit-generator.zip src/ node_modules/ package.json -x "*.git*" "*test*" "*.md"
+# Check if files exist before zipping
+if [ ! -d "src" ]; then
+    echo "❌ Error: src/ directory not found!"
+    exit 1
+fi
+
+if [ ! -d "node_modules" ]; then
+    echo "❌ Error: node_modules/ directory not found!"
+    exit 1
+fi
+
+if [ ! -f "package.json" ]; then
+    echo "❌ Error: package.json not found!"
+    exit 1
+fi
+
+echo "📁 Zipping files: src/, node_modules/, package.json"
+zip -r outfit-generator.zip src/ node_modules/ package.json -x "*.git*" "*test*" "*.md" "deploy/*"
+
+echo "📦 Deployment package created: outfit-generator.zip"
+ls -la outfit-generator.zip
 
 echo "⚡ Updating Lambda function code..."
 aws lambda update-function-code \

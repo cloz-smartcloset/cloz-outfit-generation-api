@@ -3,13 +3,15 @@
  * Generates outfits with multiple models using Google JavaScript Style Guide
  */
 
-const AWS = require('aws-sdk');
+const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBDocumentClient, GetCommand } = require('@aws-sdk/lib-dynamodb');
 const {Client} = require('pg');
 
 // AWS services configuration
-const dynamoDB = new AWS.DynamoDB.DocumentClient({
+const dynamoDBClient = new DynamoDBClient({
   region: process.env.AWS_REGION || 'eu-west-3',
 });
+const dynamoDB = DynamoDBDocumentClient.from(dynamoDBClient);
 
 // Generation models
 const MODELS = {
@@ -212,7 +214,7 @@ async function getProductDetails(productIds, userId) {
     host: process.env.DB_HOST,
     port: process.env.DB_PORT || 5432,
     database: process.env.DB_NAME,
-    user: process.env.DB_USER,
+    user: 'postgres',
     password: process.env.DB_PASSWORD,
     ssl: {rejectUnauthorized: false},
   });
@@ -261,10 +263,10 @@ async function getProductDetails(productIds, userId) {
  */
 async function getUserProduct(productId, userId) {
   try {
-    const result = await dynamoDB.get({
+    const result = await dynamoDB.send(new GetCommand({
       TableName: 'Products-test',
       Key: {product_id: productId},
-    }).promise();
+    }));
 
     // Check if product belongs to user
     if (result.Item && result.Item.user_id === userId) {
@@ -333,7 +335,7 @@ async function getComplementaryProducts(count) {
     host: process.env.DB_HOST,
     port: process.env.DB_PORT || 5432,
     database: process.env.DB_NAME,
-    user: process.env.DB_USER,
+    user: 'postgres',
     password: process.env.DB_PASSWORD,
     ssl: {rejectUnauthorized: false},
   });
