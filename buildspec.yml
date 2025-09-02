@@ -9,6 +9,12 @@ phases:
     commands:
       - zip -r outfit-generator.zip src/ node_modules/ package.json -x "*.git*" "*test*" "*.md" "deploy/*" "build/*"
 
+  post_build:
+    commands:
+      - echo "Deploying to Lambda function..."
+      - aws lambda update-function-code --function-name ClozRandomLookGenerator --zip-file fileb://outfit-generator.zip --region eu-west-3
+      - echo "Lambda function updated successfully!"
+
 artifacts:
   files:
     - outfit-generator.zip
